@@ -21,7 +21,7 @@ export interface Thread {
   latest: Email;
 }
 
-export interface ReplySummary {
+export interface ThreadReplyResult {
   threadId: string;
   status:
     | 'sent'
@@ -31,6 +31,14 @@ export interface ReplySummary {
     | 'error';
   replyId?: string;
   error?: string;
+}
+
+export interface ReplySummary {
+  replied: number;
+  skippedAlreadyReplied: number;
+  skippedNotActionable: number;
+  skippedSpam: number;
+  errors: ThreadReplyResult[];
 }
 
 export const ConfigSchema = z.object({
