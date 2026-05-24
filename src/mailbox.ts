@@ -48,10 +48,7 @@ export class GainMailbox {
       const page = await this.api.listEmails(pageStart, pageStart + PAGE_SIZE);
       if (page.length === 0) break;
 
-      for (const email of page) {
-        await this.store.upsert(email);
-      }
-
+      await this.store.upsertBatch(page);
       fetched += page.length;
       pageStart += PAGE_SIZE;
       this.logger.debug({ phase: 'ingest', fetched, pageStart }, 'Page ingested');
@@ -93,7 +90,11 @@ export class GainMailbox {
     this.logger.info({ phase: 'reply', actionable: actionable.length }, 'Actionable threads identified');
 
     const summary = await this.replyService.replyToActionable(actionable);
-    this.logger.info({ phase: 'reply', status: 'done', ...summary, errors: summary.errors.length }, 'Reply phase complete');
+    const { replied, skippedAlreadyReplied, skippedNotActionable, skippedSpam } = summary;
+    this.logger.info(
+      { phase: 'reply', status: 'done', replied, skippedAlreadyReplied, skippedNotActionable, skippedSpam, errors: summary.errors.length },
+      'Reply phase complete',
+    );
 
     return summary;
   }

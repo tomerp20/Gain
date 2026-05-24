@@ -72,6 +72,7 @@ async function main(): Promise<void> {
         actionable: threads.actionable,
         replied: reply.replied,
         skippedAlreadyReplied: reply.skippedAlreadyReplied,
+        skippedSpam: reply.skippedSpam,
         errors: reply.errors.length,
       });
       break;
