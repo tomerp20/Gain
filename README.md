@@ -39,8 +39,10 @@ All config is loaded from environment variables. Copy `.env.example` to `.env` a
 | `GAIN_API_BASE_URL` | — | Base URL of the Gain Email Server |
 | `GAIN_FROM_ADDRESS` | — | Sender address used for all outgoing replies |
 | `GAIN_STORAGE_PATH` | — | Path to the local JSON storage file |
-| `ANTHROPIC_API_KEY` | — | Anthropic API key |
-| `ANTHROPIC_MODEL` | `claude-haiku-4-5-20251001` | Model used for reply generation |
+| `AZURE_OPENAI_ENDPOINT` | — | Azure OpenAI resource endpoint URL |
+| `AZURE_OPENAI_API_KEY` | — | Azure OpenAI API key |
+| `AZURE_OPENAI_DEPLOYMENT` | — | Deployment name (e.g. `gpt-5.4-mini`) |
+| `AZURE_OPENAI_API_VERSION` | `2025-01-01-preview` | Azure OpenAI API version |
 | `LOG_LEVEL` | `info` | Pino log level |
 
 ## Storage

@@ -37,8 +37,10 @@ export const ConfigSchema = z.object({
   GAIN_API_BASE_URL: z.string().url(),
   GAIN_FROM_ADDRESS: z.string().email(),
   GAIN_STORAGE_PATH: z.string().min(1),
-  ANTHROPIC_API_KEY: z.string().min(1),
-  ANTHROPIC_MODEL: z.string().default('claude-haiku-4-5-20251001'),
+  AZURE_OPENAI_ENDPOINT: z.string().url(),
+  AZURE_OPENAI_API_KEY: z.string().min(1),
+  AZURE_OPENAI_DEPLOYMENT: z.string().min(1),
+  AZURE_OPENAI_API_VERSION: z.string().default('2025-01-01-preview'),
   LOG_LEVEL: z
     .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
     .default('info'),
