@@ -87,6 +87,7 @@ export interface ReplyRecord {
 
 export interface EmailStore {
   upsert(email: Email): Promise<void>;
+  upsertMany(emails: Email[]): Promise<void>;
   getAll(): Promise<Email[]>;
   getById(id: string): Promise<Email | undefined>;
   markReadLocally(id: string, value: boolean): Promise<void>;

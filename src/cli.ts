@@ -23,9 +23,7 @@ function filterActionable(threads: Thread[]): Thread[] {
 async function cmdIngest(): Promise<void> {
   logger.info('ingesting emails from API…');
   const emails = await fetchAllEmails(api, logger);
-  for (const email of emails) {
-    await store.upsert(email);
-  }
+  await store.upsertMany(emails);
   logger.info({ count: emails.length }, 'ingest complete');
 }
 

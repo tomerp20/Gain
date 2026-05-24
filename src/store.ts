@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { Email, Thread, EmailStore, ReplyRecord } from './types/index.js';
 
@@ -14,20 +14,21 @@ function emptyStore(): StoreData {
 
 export function createStore(storagePath: string): EmailStore {
   async function load(): Promise<StoreData> {
+    let raw: string;
     try {
-      const raw = await readFile(storagePath, 'utf-8');
-      return JSON.parse(raw) as StoreData;
-    } catch {
-      return emptyStore();
+      raw = await readFile(storagePath, 'utf-8');
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return emptyStore();
+      throw err;
     }
+    // Parse errors must throw — silently returning empty would wipe reply records
+    return JSON.parse(raw) as StoreData;
   }
 
   async function save(data: StoreData): Promise<void> {
     await mkdir(dirname(storagePath), { recursive: true });
     const tmp = `${storagePath}.tmp`;
     await writeFile(tmp, JSON.stringify(data, null, 2), 'utf-8');
-    // Atomic rename — Node fs/promises rename is atomic on same-filesystem
-    const { rename } = await import('node:fs/promises');
     await rename(tmp, storagePath);
   }
 
@@ -40,6 +41,16 @@ export function createStore(storagePath: string): EmailStore {
       } else {
         data.emails.push(email);
       }
+      await save(data);
+    },
+
+    async upsertMany(emails: Email[]): Promise<void> {
+      const data = await load();
+      const byId = new Map(data.emails.map((e) => [e.id, e]));
+      for (const email of emails) {
+        byId.set(email.id, email);
+      }
+      data.emails = [...byId.values()];
       await save(data);
     },
 

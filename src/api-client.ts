@@ -12,9 +12,10 @@ export function createApiClient(baseUrl: string, logger: Logger): ApiClient {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) {
-      const text = await res.text().catch(() => '');
+      const text = (await res.text().catch(() => '')).slice(0, 300);
       throw new Error(`${method} ${url} → ${res.status}: ${text}`);
     }
     if (res.status === 204) return undefined as T;
@@ -55,7 +56,6 @@ export async function fetchAllEmails(client: ApiClient, logger: Logger): Promise
     if (batch.length === 0) break;
     all.push(...batch);
     start += PAGE_SIZE;
-    if (batch.length < PAGE_SIZE) break;
   }
 
   log.info({ total: all.length }, 'finished fetching emails');

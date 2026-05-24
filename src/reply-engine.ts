@@ -45,9 +45,12 @@ export async function replyToActionableThreads(
         in_reply_to: thread.latest.id,
       });
 
+      // Record immediately after send — idempotency guard must be anchored to the
+      // irreversible side effect. markRead is best-effort cleanup; if it fails we
+      // won't double-reply on the next run because hasRepliedTo will catch it.
+      await store.recordReply(thread.thread_id, sent.id, new Date(sent.created_at));
       await client.markRead(thread.latest.id, true);
       await store.markReadLocally(thread.latest.id, true);
-      await store.recordReply(thread.thread_id, sent.id, new Date());
 
       log2.info({ replyId: sent.id }, 'reply sent and recorded');
       results.push({ threadId: thread.thread_id, status: 'sent', replyId: sent.id });
