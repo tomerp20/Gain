@@ -4,7 +4,7 @@ import { EmailSchema } from '../types/index.js';
 
 export class ApiError extends Error {
   constructor(
-    public readonly type: 'network' | 'http' | 'validation',
+    public readonly type: 'network' | 'timeout' | 'http' | 'validation',
     message: string,
     public override readonly cause?: unknown
   ) {
@@ -29,6 +29,9 @@ async function withRetry<T>(
   retries: number,
   logger: Logger
 ): Promise<T> {
+  if (retries > BACKOFF_MS.length) {
+    throw new Error(`withRetry: retries=${retries} exceeds BACKOFF_MS table length (${BACKOFF_MS.length})`);
+  }
   let lastError: unknown;
   const maxAttempts = retries + 1;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -38,9 +41,9 @@ async function withRetry<T>(
       if (err instanceof ApiError && err.type === 'validation') throw err;
       lastError = err;
       if (attempt < maxAttempts - 1) {
-        const delay = jitteredDelay(BACKOFF_MS[attempt] ?? BACKOFF_MS[BACKOFF_MS.length - 1]);
+        const delay = jitteredDelay(BACKOFF_MS[attempt]!);
         logger.warn(
-          { attempt: attempt + 1, delayMs: Math.round(delay) },
+          { attemptNumber: attempt + 1, maxAttempts, retryDelayMs: Math.round(delay) },
           'API request failed, retrying'
         );
         await sleep(delay);
@@ -73,22 +76,38 @@ export class FetchApiClient implements IApiClient {
       response = await fetch(url, {
         method,
         signal,
-        headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+        headers: {
+          Accept: 'application/json',
+          ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        },
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch (err) {
+      const isTimeout = err instanceof Error && err.name === 'TimeoutError';
       throw new ApiError(
-        'network',
-        `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        isTimeout ? 'timeout' : 'network',
+        isTimeout
+          ? `Request timed out after ${TIMEOUT_MS}ms: ${method} ${path}`
+          : `Network error: ${err instanceof Error ? err.message : String(err)}`,
         err
       );
     }
 
     if (!response.ok) {
-      throw new ApiError('http', `HTTP ${response.status} from ${method} ${path}`);
+      const text = await response.text().catch(() => '');
+      throw new ApiError('http', `HTTP ${response.status} from ${method} ${path}: ${text.slice(0, 200)}`);
     }
 
-    const json: unknown = await response.json();
+    let json: unknown;
+    try {
+      json = await response.json();
+    } catch (err) {
+      throw new ApiError(
+        'validation',
+        `Failed to parse JSON from ${method} ${path}: ${err instanceof Error ? err.message : String(err)}`,
+        err
+      );
+    }
     const parsed = schema.safeParse(json);
     if (!parsed.success) {
       throw new ApiError(
@@ -121,7 +140,7 @@ export class FetchApiClient implements IApiClient {
 
   async markRead(emailId: string, isRead: boolean): Promise<void> {
     await withRetry(
-      () => this.request('PUT', `/emails/${emailId}/read`, z.unknown(), { is_read: isRead }),
+      () => this.request('PUT', `/emails/${emailId}/read`, EmailSchema, { is_read: isRead }),
       2,
       this.logger
     );
