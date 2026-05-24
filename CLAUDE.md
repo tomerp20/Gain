@@ -1,5 +1,7 @@
 # Gain Project — Agent Operating Instructions
 
+**Repository:** https://github.com/tomerp20/Gain (public, `main` branch)
+
 **MANDATORY FIRST STEP for every agent (main session and all sub-agents):**
 
 Before doing anything else in this folder, read the exercise spec:
