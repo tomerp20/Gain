@@ -3,4 +3,4 @@ dist/
 .env
 data/
 *.log
-.claude/settings.json
+.claude/
