@@ -78,6 +78,7 @@ export interface ApiClient {
   getEmail(emailId: string): Promise<Email>;
   sendEmail(payload: SendEmailPayload): Promise<Email>;
   markRead(emailId: string, isRead: boolean): Promise<void>;
+  health(): Promise<{ status: string }>;
 }
 
 export interface ReplyRecord {
