@@ -25,7 +25,7 @@ export class AzureOpenAiLlmClient implements LlmClient {
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.3,
-      max_tokens: 1024,
+      max_completion_tokens: 1024,
     });
     const content = response.choices[0]?.message?.content;
     if (!content) {
