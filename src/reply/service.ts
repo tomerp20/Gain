@@ -40,13 +40,6 @@ export class ReplyService {
     private readonly fromAddress: string
   ) {}
 
-  private async isActionable(thread: Thread): Promise<boolean> {
-    if (thread.latest.email_direction !== 'in') return false;
-    if (thread.latest.is_read) return false;
-    if (await this.store.hasRepliedTo(thread.thread_id)) return false;
-    return true;
-  }
-
   async replyToActionable(threads: Thread[]): Promise<ReplySummary> {
     const summary: ReplySummary = {
       replied: 0,
@@ -68,6 +61,8 @@ export class ReplyService {
         summary.skippedNotActionable++;
         continue;
       }
+
+      // TODO: spam classification — skippedSpam is always 0 until a classifier is wired in
 
       try {
         let replyBody: string;
