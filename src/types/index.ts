@@ -11,6 +11,8 @@ export const EmailSchema = z.object({
   email_direction: z.enum(['in', 'out']),
   in_reply_to: z.string().uuid().nullable(),
   created_at: z.string().datetime({ offset: true }),
+  spam_label: z.enum(['spam', 'ham']).nullable().optional(),
+  spam_confidence: z.number().min(0).max(1).nullable().optional(),
 });
 
 export type Email = z.infer<typeof EmailSchema>;
@@ -52,6 +54,16 @@ export const ConfigSchema = z.object({
   LOG_LEVEL: z
     .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
     .default('info'),
+  SPAM_CLASSIFIER_ENABLED: z
+    .string()
+    .optional()
+    .default('true')
+    .transform(v => v.toLowerCase() !== 'false'),
+  SPAM_CONFIDENCE_THRESHOLD: z
+    .string()
+    .optional()
+    .default('0.7')
+    .transform(v => parseFloat(v)),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -94,8 +106,14 @@ export interface EmailStore {
   recordReply(threadId: string, replyEmailId: string, sentAt: Date): Promise<void>;
   getReplyRecord(threadId: string): Promise<ReplyRecord | undefined>;
   hasRepliedTo(threadId: string): Promise<boolean>;
+  updateSpamLabel(id: string, label: 'spam' | 'ham', confidence: number): Promise<void>;
+  getUnclassified(): Promise<Email[]>;
 }
 
 export interface LlmClient {
   generate(systemPrompt: string, userPrompt: string): Promise<string>;
+}
+
+export interface SpamClassifier {
+  classify(email: Email): Promise<{ label: 'spam' | 'ham' | null; confidence: number | null }>;
 }

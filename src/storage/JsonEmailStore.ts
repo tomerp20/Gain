@@ -90,4 +90,15 @@ export class JsonEmailStore implements EmailStore {
   async hasRepliedTo(threadId: string): Promise<boolean> {
     return threadId in this.state.replies;
   }
+
+  async updateSpamLabel(id: string, label: 'spam' | 'ham', confidence: number): Promise<void> {
+    const email = this.state.emails[id];
+    if (!email) return;
+    this.state.emails[id] = { ...email, spam_label: label, spam_confidence: confidence };
+    this.flush();
+  }
+
+  async getUnclassified(): Promise<Email[]> {
+    return Object.values(this.state.emails).filter(e => e.spam_label == null);
+  }
 }
