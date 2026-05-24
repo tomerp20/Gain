@@ -6,10 +6,11 @@ Usage: npm run gain -- <command>
 
 Commands:
   ingest      Fetch all emails from the API and persist to local storage
+  classify    Classify all unclassified emails as spam or ham
   threads     Reconstruct email threads from stored emails
   actionable  List threads that need a reply
   reply       Reply to all actionable threads
-  run         Full pipeline: ingest → threads → reply (default)
+  run         Full pipeline: ingest → classify → threads → reply (default)
 `.trim();
 
 function printSummary(label: string, data: Record<string, unknown>): void {
@@ -34,6 +35,12 @@ async function main(): Promise<void> {
     case 'ingest': {
       const result = await mailbox.ingest();
       printSummary('Ingest', { ...result });
+      break;
+    }
+
+    case 'classify': {
+      const result = await mailbox.classifySpam();
+      printSummary('Classify', { ...result });
       break;
     }
 
@@ -63,11 +70,14 @@ async function main(): Promise<void> {
 
     case 'run': {
       const ingest = await mailbox.ingest();
+      const classify = await mailbox.classifySpam();
       const threads = await mailbox.buildThreads();
       const reply = await mailbox.replyToActionable();
 
       printSummary('Run Summary', {
         fetched: ingest.fetched,
+        classified: classify.classified,
+        spamFound: classify.spam,
         built: threads.built,
         actionable: threads.actionable,
         replied: reply.replied,
