@@ -50,6 +50,13 @@ export class JsonEmailStore implements EmailStore {
     this.flush();
   }
 
+  async upsertBatch(emails: Email[]): Promise<void> {
+    for (const email of emails) {
+      this.state.emails[email.id] = email;
+    }
+    this.flush();
+  }
+
   async getAll(): Promise<Email[]> {
     return Object.values(this.state.emails);
   }
