@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Email, EmailStore, ReplyRecord, Thread } from '../types/index.js';
 
 interface StorageShape {
@@ -30,11 +30,14 @@ export class JsonEmailStore implements EmailStore {
   }
 
   private load(): StorageShape {
-    if (!fs.existsSync(this.emailsPath)) return emptyStore();
     try {
       return JSON.parse(fs.readFileSync(this.emailsPath, 'utf8')) as StorageShape;
-    } catch {
-      return emptyStore();
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return emptyStore();
+      throw new Error(
+        `Storage file ${this.emailsPath} is corrupt and cannot be parsed. ` +
+          `Remove or restore it manually: ${String(err)}`,
+      );
     }
   }
 
