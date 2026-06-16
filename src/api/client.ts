@@ -145,4 +145,12 @@ export class FetchApiClient implements IApiClient {
       this.logger
     );
   }
+
+  async health(): Promise<{ status: string }> {
+    return withRetry(
+      () => this.request('GET', '/health', z.object({ status: z.string() })),
+      2,
+      this.logger
+    );
+  }
 }
